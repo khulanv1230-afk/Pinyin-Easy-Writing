@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anki Pinyin Master - Full Backup & Deck Manager Edition</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            user-select: none;
+        }
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .transform-style-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+                        <i data-lucide="languages" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-lg text-slate-900 leading-tight">Anki Pinyin Master</h1>
+                        <p class="text-xs text-slate-500 font-medium">Chinese Hanzi & Tone Pinyin Trainer</p>
+                    </div>
+                </div>
+
+                <!-- Stats, Backup & Modal Controls -->
+                <div class="flex items-center space-x-2 sm:space-x-3">
+                    <div class="hidden lg:flex items-center space-x-2 bg-slate-100 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600">
+                        <i data-lucide="layers" class="w-4 h-4 text-indigo-500"></i>
+                        <span>Total Words: <strong id="total-words-count" class="text-slate-900">0</strong></span>
+                    </div>
+
+                    <!-- BACKUP SYSTEM BUTTONS -->
+                    <button onclick="exportJSONBackup()" title="Download full JSON backup file" class="flex items-center space-x-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-3 py-2 rounded-xl text-xs font-bold transition">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">Export Backup</span>
+                    </button>
+
+                    <label title="Restore from JSON backup file" class="flex items-center space-x-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                        <span class="hidden md:inline">Import Backup</span>
+                        <input type="file" id="json-restore-input" accept=".json" onchange="importJSONBackup(event)" class="hidden" />
+                    </label>
+
+                    <button onclick="openWordManagerModal()" class="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition">
+                        <i data-lucide="table" class="w-4 h-4 text-indigo-600"></i>
+                        <span class="hidden sm:inline">Manage Words</span>
+                    </button>
+
+                    <button onclick="openImportModal()" class="flex items-center space-x-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-2 rounded-xl text-xs font-bold transition">
+                        <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Import Text</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-72 flex-shrink-0 space-y-5">
+
+            <!-- 1. FOLDER & FILTER SELECTION -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-4">
+                <div>
+                    <label for="folder-select" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        1. Select Folder / Deck
+                    </label>
+                    <div class="relative">
+                        <select id="folder-select" onchange="onFolderChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer">
+                            <option value="ALL">All Combined Words</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <!-- SRS INTERVAL BUCKET SELECTION -->
+                <div class="pt-3 border-t border-slate-100">
+                    <label for="interval-select" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                        2. SRS Interval Classification
+                    </label>
+                    <div class="relative">
+                        <select id="interval-select" onchange="onIntervalChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none cursor-pointer">
+                            <option value="ALL">All Intervals (No Filter)</option>
+                            <option value="again">Again (1 min)</option>
+                            <option value="hard">Hard (1 day)</option>
+                            <option value="good">Good (3 days)</option>
+                            <option value="easy">Easy (7 days)</option>
+                            <option value="unseen">Unseen / New Cards</option>
+                        </select>
+                        <i data-lucide="filter" class="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <!-- Quick Shuffle Button -->
+                <button onclick="shuffleActiveDeck()" class="w-full flex items-center justify-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold text-xs transition">
+                    <i data-lucide="shuffle" class="w-4 h-4 text-indigo-600"></i>
+                    <span>Shuffle Current Deck Order</span>
+                </button>
+            </div>
+
+            <!-- 2. STUDY MODES -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-1">
+                <div class="px-3 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">3. Choose Study Mode</div>
+                
+                <button onclick="switchMode('flashcard')" id="nav-flashcard" class="mode-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-sm transition bg-indigo-50 text-indigo-700">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i>
+                    <span>Flashcard</span>
+                </button>
+                
+                <button onclick="switchMode('quiz')" id="nav-quiz" class="mode-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-50 transition">
+                    <i data-lucide="help-circle" class="w-4 h-4"></i>
+                    <span>Multiple Choice Quiz</span>
+                </button>
+                
+                <button onclick="switchMode('typing')" id="nav-typing" class="mode-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-50 transition">
+                    <i data-lucide="keyboard" class="w-4 h-4"></i>
+                    <span>Tone Typing Practice</span>
+                </button>
+
+                <button onclick="switchMode('listening')" id="nav-listening" class="mode-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl font-bold text-sm text-slate-600 hover:bg-slate-50 transition">
+                    <i data-lucide="volume-2" class="w-4 h-4"></i>
+                    <span>Audio Listening</span>
+                </button>
+            </div>
+
+            <!-- Manage Folders Quick Access & Reset -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
+                <button onclick="openWordManagerModal()" class="w-full flex items-center justify-center space-x-2 text-xs text-indigo-600 font-bold hover:underline py-1">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                    <span>Open Word Manager Table</span>
+                </button>
+                <button onclick="resetAllProgress()" class="w-full flex items-center justify-center space-x-2 text-xs text-slate-500 hover:text-rose-600 py-1 font-semibold transition">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    <span>Reset All SRS Interval States</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Dynamic Content Display Area -->
+        <section class="flex-1 flex flex-col items-center justify-start min-h-[520px]">
+
+            <!-- Empty Deck Alert -->
+            <div id="empty-state" class="hidden w-full max-w-md my-auto text-center p-8 bg-white rounded-3xl border border-slate-200 shadow-sm">
+                <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="folder-open" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-800 mb-1">No Cards Found</h3>
+                <p class="text-sm text-slate-500 mb-6">There are no vocabulary cards matching your current folder or interval filter. Try importing a file, adding words, or changing filters.</p>
+                <button onclick="openImportModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition shadow-md shadow-indigo-200">
+                    Import Text / Folder
+                </button>
+            </div>
+
+            <!-- ================= MODE 1: FLASHCARD ================= -->
+            <div id="view-flashcard" class="w-full max-w-xl flex flex-col items-center space-y-6">
+                <!-- Progress Header -->
+                <div class="w-full flex justify-between items-center text-sm font-semibold text-slate-500 px-2">
+                    <span id="fc-folder-label">Folder: All Words</span>
+                    <span id="fc-counter" class="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full text-xs font-bold">0 / 0</span>
+                </div>
+
+                <!-- Card Flip Box Container -->
+                <div class="w-full h-80 perspective-1000 cursor-pointer" onclick="flipFlashcard()">
+                    <div id="flashcard-inner" class="relative w-full h-full duration-500 transform-style-3d shadow-xl rounded-3xl border border-slate-200 bg-white">
+                        
+                        <!-- Card Front: Primary English Translation Focus -->
+                        <div class="absolute inset-0 backface-hidden rounded-3xl p-8 flex flex-col justify-between items-center bg-white">
+                            <div class="w-full flex justify-between items-center">
+                                <span id="fc-tag-front" class="text-xs font-extrabold tracking-wide uppercase px-3 py-1 bg-slate-100 text-indigo-600 rounded-full">Folder</span>
+                                <button onclick="event.stopPropagation(); playCurrentAudio()" class="text-slate-400 hover:text-indigo-600 p-2 rounded-full hover:bg-indigo-50 transition">
+                                    <i data-lucide="volume-2" class="w-6 h-6"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Front display: English Meaning Big, Hanzi below -->
+                            <div class="text-center my-auto px-4">
+                                <h2 id="fc-english-front" class="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">--</h2>
+                                <p id="fc-hanzi-front" class="text-4xl font-bold text-indigo-600">--</p>
+                            </div>
+
+                            <p class="text-xs font-bold text-slate-400 flex items-center space-x-1">
+                                <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                                <span>Click card to reveal Pinyin</span>
+                            </p>
+                        </div>
+
+                        <!-- Card Back: Reveals Pinyin with Tone marks & Hanzi -->
+                        <div class="absolute inset-0 backface-hidden rotate-y-180 rounded-3xl p-8 flex flex-col justify-between items-center bg-slate-900 text-white">
+                            <div class="w-full flex justify-between items-center">
+                                <span id="fc-tag-back" class="text-xs font-extrabold tracking-wide uppercase px-3 py-1 bg-slate-800 text-indigo-400 rounded-full">Folder</span>
+                                <button onclick="event.stopPropagation(); playCurrentAudio()" class="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition">
+                                    <i data-lucide="volume-2" class="w-6 h-6"></i>
+                                </button>
+                            </div>
+
+                            <div class="text-center my-auto px-4">
+                                <h3 id="fc-pinyin-back" class="text-4xl font-extrabold text-indigo-400 mb-2">--</h3>
+                                <p id="fc-hanzi-back" class="text-3xl font-semibold text-slate-200">--</p>
+                                <p id="fc-english-back" class="text-lg text-slate-400 font-medium mt-1">--</p>
+                            </div>
+
+                            <p class="text-xs text-slate-400 font-bold">Select Anki SRS Interval below:</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SRS Buttons -->
+                <div id="anki-buttons" class="w-full grid grid-cols-4 gap-3 opacity-50 pointer-events-none transition-opacity duration-300">
+                    <button onclick="handleAnkiResponse('again')" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold transition">
+                        <span class="text-sm">Again</span>
+                        <span class="text-[10px] font-semibold text-rose-500">1 min</span>
+                    </button>
+                    <button onclick="handleAnkiResponse('hard')" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 font-bold transition">
+                        <span class="text-sm">Hard</span>
+                        <span class="text-[10px] font-semibold text-amber-500">1 day</span>
+                    </button>
+                    <button onclick="handleAnkiResponse('good')" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-bold transition">
+                        <span class="text-sm">Good</span>
+                        <span class="text-[10px] font-semibold text-blue-500">3 days</span>
+                    </button>
+                    <button onclick="handleAnkiResponse('easy')" class="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 font-bold transition">
+                        <span class="text-sm">Easy</span>
+                        <span class="text-[10px] font-semibold text-emerald-500">7 days</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================= MODE 2: MULTIPLE CHOICE QUIZ ================= -->
+            <div id="view-quiz" class="hidden w-full max-w-xl flex flex-col space-y-6">
+                <div class="w-full flex justify-between items-center text-sm font-semibold text-slate-500 px-2">
+                    <span>Multiple Choice Quiz</span>
+                    <span id="quiz-counter" class="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full text-xs font-bold">0 / 0</span>
+                </div>
+
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col items-center text-center space-y-6">
+                    <div class="flex items-center space-x-3">
+                        <h2 id="quiz-question-word" class="text-5xl font-extrabold text-slate-900">--</h2>
+                        <button onclick="playCurrentAudio()" class="text-slate-400 hover:text-indigo-600 p-2 rounded-full hover:bg-indigo-50 transition">
+                            <i data-lucide="volume-2" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                    <p id="quiz-question-meaning" class="text-base font-semibold text-slate-600">Select the correct Pinyin for this word:</p>
+
+                    <!-- 4 Options Grid -->
+                    <div id="quiz-options-container" class="w-full grid grid-cols-1 gap-3 pt-2">
+                        <!-- Options injected dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= MODE 3: TYPING PRACTICE ================= -->
+            <div id="view-typing" class="hidden w-full max-w-xl flex flex-col space-y-6">
+                <div class="w-full flex justify-between items-center text-sm font-semibold text-slate-500 px-2">
+                    <span>Pinyin Tone Typing Practice</span>
+                    <span id="typing-counter" class="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full text-xs font-bold">0 / 0</span>
+                </div>
+
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col items-center text-center space-y-6">
+                    <div>
+                        <span id="typing-category-badge" class="text-xs font-bold tracking-wide uppercase px-3 py-1 bg-slate-100 text-indigo-600 rounded-full">Folder</span>
+                        <h2 id="typing-chinese" class="text-6xl font-extrabold text-slate-900 my-4">--</h2>
+                        <p id="typing-meaning" class="text-lg font-bold text-slate-600">--</p>
+                    </div>
+
+                    <form onsubmit="checkTypingAnswer(event)" class="w-full space-y-4">
+                        <div class="relative w-full">
+                            <input type="text" id="typing-input" autocomplete="off" placeholder="Type Pinyin with tones (e.g. bu4 ding1 or bu4ding1)" 
+                                class="w-full bg-slate-50 border border-slate-300 rounded-2xl px-4 py-3.5 text-center text-lg font-bold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition">
+                        </div>
+
+                        <!-- Feedback Message -->
+                        <div id="typing-feedback" class="hidden text-sm font-bold p-3 rounded-xl"></div>
+
+                        <div class="flex space-x-3">
+                            <button type="submit" id="typing-submit-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-2xl transition shadow-md shadow-indigo-200">
+                                Check Answer
+                            </button>
+                            <button type="button" onclick="nextTypingCard()" id="typing-next-btn" class="hidden flex-1 bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 rounded-2xl transition">
+                                Next Word
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="text-left w-full bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-xs text-slate-500 space-y-1">
+                        <p class="font-bold text-slate-600">💡 Input Help:</p>
+                        <p>Tone numbers supported: <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200">bu4 ding1</code> → <code class="text-indigo-600 font-bold">bù dīng</code>, <code class="bg-white px-1.5 py-0.5 rounded border border-slate-200">nv3</code> → <code class="text-indigo-600 font-bold">nǚ</code></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================= MODE 4: LISTENING PRACTICE ================= -->
+            <div id="view-listening" class="hidden w-full max-w-xl flex flex-col space-y-6">
+                <div class="w-full flex justify-between items-center text-sm font-semibold text-slate-500 px-2">
+                    <span>Audio Listening Practice</span>
+                    <span id="listening-counter" class="bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full text-xs font-bold">0 / 0</span>
+                </div>
+
+                <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col items-center text-center space-y-6">
+                    <button onclick="playCurrentAudio()" class="w-24 h-24 rounded-full bg-indigo-50 hover:bg-indigo-100 border-2 border-indigo-200 text-indigo-600 flex items-center justify-center shadow-lg transition transform active:scale-95 group">
+                        <i data-lucide="volume-2" class="w-12 h-12 group-hover:scale-110 transition"></i>
+                    </button>
+                    <p class="text-xs text-slate-400 font-semibold">Click to re-listen to pronunciation</p>
+
+                    <!-- Reveal Card after answer -->
+                    <div id="listening-answer-reveal" class="hidden space-y-1 bg-slate-50 p-4 rounded-2xl w-full">
+                        <h3 id="listening-revealed-chinese" class="text-3xl font-extrabold text-slate-900">--</h3>
+                        <p id="listening-revealed-pinyin" class="text-base text-indigo-600 font-bold">--</p>
+                    </div>
+
+                    <!-- Options Grid -->
+                    <div id="listening-options-container" class="w-full grid grid-cols-1 gap-3 pt-2">
+                        <!-- Options injected dynamically -->
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- ================= MODAL 1: CSV/TSV IMPORT & FOLDER CREATION ================= -->
+    <div id="import-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xl rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col">
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="folder-plus" class="w-5 h-5 text-indigo-600"></i>
+                    <h3 class="font-bold text-slate-800 text-base">Import Vocabulary / Folder Selection</h3>
+                </div>
+                <button onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <!-- Select Existing OR Create New Folder -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider">
+                        Destination Folder:
+                    </label>
+
+                    <!-- Dropdown for existing folders -->
+                    <div>
+                        <select id="import-existing-folder" onchange="toggleFolderMode()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Input for new folder name (visible if 'NEW' is selected) -->
+                    <div id="new-folder-input-container" class="hidden">
+                        <input type="text" id="import-new-folder-name" placeholder="Enter new folder name (e.g. HSK1 Vocabulary, Chapter 1)"
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div class="text-xs text-slate-500 leading-relaxed">
+                    Format (3 columns separated by Tab or Comma):<br>
+                    <code class="text-indigo-600 font-bold">1. Chinese Hanzi | 2. Tone Pinyin (e.g. bu4 ding1) | 3. English Meaning</code>
+                </div>
+
+                <!-- File Input Drag-Drop Area -->
+                <div class="flex items-center justify-center w-full">
+                    <label class="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-300 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition">
+                        <div class="flex flex-col items-center justify-center py-4">
+                            <i data-lucide="upload-cloud" class="w-7 h-7 text-slate-400 mb-1"></i>
+                            <p class="text-xs text-slate-600 font-semibold">Select .txt or .csv file</p>
+                        </div>
+                        <input type="file" id="file-input" accept=".txt,.csv,.tsv" onchange="handleFileSelect(event)" class="hidden" />
+                    </label>
+                </div>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-200"></div>
+                    <span class="flex-shrink mx-4 text-xs font-bold text-slate-400">or paste text data</span>
+                    <div class="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <!-- Textarea -->
+                <textarea id="import-textarea" rows="4" placeholder="补丁	bu4 ding1	patch, fix&#10;你好	ni3 hao3	hello&#10;苹果	ping2 guo3	apple"
+                    class="w-full bg-slate-50 border border-slate-200 rounded-2xl p-3.5 text-xs font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end space-x-3">
+                <button onclick="closeImportModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 transition">Cancel</button>
+                <button onclick="processTextImport()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition shadow-md shadow-indigo-200">
+                    Import Words
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= MODAL 2: WORD MANAGER & FOLDER CONTENT TABLE ================= -->
+    <div id="word-manager-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-5xl h-[85vh] rounded-3xl border border-slate-200 shadow-2xl overflow-hidden flex flex-col">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="table" class="w-5 h-5 text-indigo-600"></i>
+                    <h3 class="font-bold text-slate-800 text-base">Folder Content & Word Table Manager</h3>
+                </div>
+                <button onclick="closeWordManagerModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Grid: Side Panel + Table View -->
+            <div class="flex-1 flex overflow-hidden">
+                
+                <!-- Side Panel: Folder List -->
+                <aside class="w-64 bg-slate-50 border-r border-slate-200 p-4 flex flex-col overflow-y-auto">
+                    <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Folders / Decks</h4>
+                    <div id="manager-folder-list" class="space-y-1 flex-1">
+                        <!-- Rendered dynamically -->
+                    </div>
+                </aside>
+
+                <!-- Main Area: Table & Manual Form -->
+                <main class="flex-1 p-6 flex flex-col overflow-hidden bg-white">
+                    
+                    <!-- Table Action Bar -->
+                    <div class="flex justify-between items-center mb-4 flex-shrink-0">
+                        <div>
+                            <h3 id="manager-current-folder-title" class="text-lg font-bold text-slate-800">Folder Words</h3>
+                            <p class="text-xs text-slate-500">View, edit, or remove words in this folder.</p>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <button onclick="toggleAddWordForm()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Add New Word Row</span>
+                            </button>
+                            <button onclick="deleteSelectedFolder()" id="delete-folder-btn" class="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center space-x-1.5">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                <span>Delete Folder</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Manual Add Word Collapsible Form -->
+                    <form id="manual-add-form" onsubmit="handleManualAddWord(event)" class="hidden mb-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 flex-shrink-0 space-y-3">
+                        <div class="grid grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1">Hanzi (Chinese)</label>
+                                <input type="text" id="add-hanzi" required placeholder="e.g. 补丁" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1">Pinyin with Tone Numbers</label>
+                                <input type="text" id="add-pinyin" required placeholder="e.g. bu4 ding1" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 mb-1">English Meaning</label>
+                                <input type="text" id="add-meaning" required placeholder="e.g. patch, fix" class="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-2 pt-1">
+                            <button type="button" onclick="toggleAddWordForm()" class="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-700">Cancel</button>
+                            <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition">Save Word Row</button>
+                        </div>
+                    </form>
+
+                    <!-- Scrollable Table Container -->
+                    <div class="flex-1 overflow-auto border border-slate-200 rounded-2xl">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+                                <tr>
+                                    <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-1/4">a. Hanzi</th>
+                                    <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-1/3">b. Tone Pinyin</th>
+                                    <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-1/3">c. English Meaning</th>
+                                    <th class="py-3 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manager-words-tbody" class="divide-y divide-slate-100 text-sm">
+                                <!-- Rendered dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Engine -->
+    <script>
+        /* ================= DEFAULT VOCABULARY ================= */
+        const DEFAULT_CARDS = [
+            { id: "1", chinese: "补丁", pinyinRaw: "bu4 ding1", meaning: "patch, fix", folder: "IT & Work", interval: "unseen" },
+            { id: "2", chinese: "你好", pinyinRaw: "ni3 hao3", meaning: "hello", folder: "Daily Basics", interval: "unseen" },
+            { id: "3", chinese: "谢谢", pinyinRaw: "xie4 xie0", meaning: "thank you", folder: "Daily Basics", interval: "unseen" },
+            { id: "4", chinese: "苹果", pinyinRaw: "ping2 guo3", meaning: "apple", folder: "Food & Drinks", interval: "unseen" },
+            { id: "5", chinese: "学习", pinyinRaw: "xue2 xi2", meaning: "to study, learn", folder: "HSK Level 1", interval: "unseen" },
+            { id: "6", chinese: "美女", pinyinRaw: "mei3 nv3", meaning: "pretty girl", folder: "Daily Basics", interval: "unseen" },
+            { id: "7", chinese: "医生", pinyinRaw: "yi1 sheng1", meaning: "doctor", folder: "Professions", interval: "unseen" },
+            { id: "8", chinese: "猫", pinyinRaw: "mao1", meaning: "cat", folder: "Animals", interval: "unseen" },
+            { id: "9", chinese: "绿茶", pinyinRaw: "lv4 cha2", meaning: "green tea", folder: "Food & Drinks", interval: "unseen" },
+            { id: "10", chinese: "电脑", pinyinRaw: "dian4 nao3", meaning: "computer", folder: "IT & Work", interval: "unseen" }
+        ];
+
+        /* ================= PINYIN PARSER ENGINE ================= */
+        function parsePinyin(rawStr) {
+            if (!rawStr) return "";
+            
+            let normalized = rawStr.replace(/v/g, 'ü').replace(/u:/g, 'ü');
+            const words = normalized.split(/\s+/);
+            
+            const toneMap = {
+                'a': ['a', 'ā', 'á', 'ǎ', 'à', 'a'],
+                'e': ['e', 'ē', 'é', 'ě', 'è', 'e'],
+                'o': ['o', 'ō', 'ó', 'ǒ', 'ò', 'o'],
+                'i': ['i', 'ī', 'í', 'ǐ', 'ì', 'i'],
+                'u': ['u', 'ū', 'ú', 'ǔ', 'ù', 'u'],
+                'ü': ['ü', 'ǖ', 'ǘ', 'ǚ', 'ǜ', 'ü']
+            };
+
+            const processedWords = words.map(word => {
+                const match = word.match(/^([a-zü]+)([0-5]?)$/i);
+                if (!match) return word;
+                
+                let [_, base, toneStr] = match;
+                let tone = toneStr ? parseInt(toneStr, 10) : 0;
+                if (tone > 4) tone = 0;
+
+                if (tone === 0) return base;
+
+                let targetVowelIndex = -1;
+                const lower = base.toLowerCase();
+
+                if (lower.includes('a')) targetVowelIndex = lower.indexOf('a');
+                else if (lower.includes('e')) targetVowelIndex = lower.indexOf('e');
+                else if (lower.includes('ou')) targetVowelIndex = lower.indexOf('o');
+                else {
+                    for (let i = lower.length - 1; i >= 0; i--) {
+                        if (toneMap[lower[i]]) {
+                            targetVowelIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (targetVowelIndex !== -1) {
+                    const char = base[targetVowelIndex];
+                    const lowerChar = char.toLowerCase();
+                    const accented = toneMap[lowerChar] ? toneMap[lowerChar][tone] : char;
+                    const finalChar = (char === char.toUpperCase()) ? accented.toUpperCase() : accented;
+                    return base.substring(0, targetVowelIndex) + finalChar + base.substring(targetVowelIndex + 1);
+                }
+
+                return base;
+            });
+
+            return processedWords.join(" ");
+        }
+
+        function comparePinyin(userInput, targetRaw, targetFormatted) {
+            const clean = (str) => str.toLowerCase().replace(/[\s\-_]/g, '').replace(/v/g, 'ü');
+            const u = clean(userInput);
+            const r = clean(targetRaw);
+            const f = clean(targetFormatted);
+            return u === r || u === f;
+        }
+
+        /* ================= STATE MANAGEMENT ================= */
+        let deck = [];
+        let currentMode = 'flashcard';
+        let selectedFolder = 'ALL';
+        let selectedInterval = 'ALL';
+        
+        let filteredDeck = [];
+        let currentIndex = 0;
+        let isCardFlipped = false;
+
+        // Word Manager Modal Active Folder
+        let managerActiveFolder = 'ALL';
+        let editingCardId = null;
+
+        /* ================= INITIALIZATION ================= */
+        window.onload = function () {
+            const saved = localStorage.getItem('anki_pinyin_deck');
+            if (saved) {
+                try { deck = JSON.parse(saved); } catch (e) { deck = [...DEFAULT_CARDS]; }
+            } else {
+                deck = [...DEFAULT_CARDS];
+            }
+
+            lucide.createIcons();
+            refreshDeckData();
+            switchMode('flashcard');
+        };
+
+        function saveDeckToStorage() {
+            localStorage.setItem('anki_pinyin_deck', JSON.stringify(deck));
+            document.getElementById('total-words-count').innerText = deck.length;
+        }
+
+        function refreshDeckData() {
+            saveDeckToStorage();
+            populateFolderDropdown();
+            applyFilterAndResetIndex();
+        }
+
+        function populateFolderDropdown() {
+            const select = document.getElementById('folder-select');
+            const folders = Array.from(new Set(deck.map(c => c.folder || 'General')));
+            
+            let html = `<option value="ALL">All Combined Words (${deck.length})</option>`;
+            folders.forEach(f => {
+                const count = deck.filter(c => c.folder === f).length;
+                html += `<option value="${f}">${f} (${count})</option>`;
+            });
+            select.innerHTML = html;
+            select.value = selectedFolder;
+        }
+
+        function applyFilterAndResetIndex() {
+            filteredDeck = deck.filter(card => {
+                const matchFolder = (selectedFolder === 'ALL' || card.folder === selectedFolder);
+                const cardInterval = card.interval || 'unseen';
+                const matchInterval = (selectedInterval === 'ALL' || cardInterval === selectedInterval);
+                return matchFolder && matchInterval;
+            });
+
+            currentIndex = 0;
+            renderCurrentCard();
+        }
+
+        function onFolderChange() {
+            selectedFolder = document.getElementById('folder-select').value;
+            applyFilterAndResetIndex();
+        }
+
+        function onIntervalChange() {
+            selectedInterval = document.getElementById('interval-select').value;
+            applyFilterAndResetIndex();
+        }
+
+        function shuffleActiveDeck() {
+            shuffleArray(filteredDeck);
+            currentIndex = 0;
+            renderCurrentCard();
+        }
+
+        /* ================= JSON BACKUP / RESTORE SYSTEM ================= */
+        function exportJSONBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(deck, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `pinyin_anki_backup_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importJSONBackup(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        deck = importedData;
+                        refreshDeckData();
+                        alert("Backup successfully restored!");
+                    } else {
+                        alert("Invalid backup file format.");
+                    }
+                } catch (err) {
+                    alert("Error reading backup file: " + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // Reset input
+        }
+
+        /* ================= MODE SWITCHING ================= */
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-50', 'text-indigo-700');
+                btn.classList.add('text-slate-600');
+            });
+            const activeNav = document.getElementById(`nav-${mode}`);
+            if (activeNav) {
+                activeNav.classList.add('bg-indigo-50', 'text-indigo-700');
+                activeNav.classList.remove('text-slate-600');
+            }
+
+            ['flashcard', 'quiz', 'typing', 'listening'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.add('hidden');
+            });
+
+            renderCurrentCard();
+        }
+
+        /* ================= CARD RENDER ROUTER ================= */
+        function renderCurrentCard() {
+            const emptyState = document.getElementById('empty-state');
+            
+            if (filteredDeck.length === 0) {
+                emptyState.classList.remove('hidden');
+                ['flashcard', 'quiz', 'typing', 'listening'].forEach(v => {
+                    document.getElementById(`view-${v}`).classList.add('hidden');
+                });
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+                document.getElementById(`view-${currentMode}`).classList.remove('hidden');
+            }
+
+            if (currentIndex >= filteredDeck.length) currentIndex = 0;
+            const currentCard = filteredDeck[currentIndex];
+            const formattedPinyin = parsePinyin(currentCard.pinyinRaw);
+
+            if (currentMode === 'flashcard') {
+                renderFlashcardView(currentCard, formattedPinyin);
+            } else if (currentMode === 'quiz') {
+                renderQuizView(currentCard, formattedPinyin);
+            } else if (currentMode === 'typing') {
+                renderTypingView(currentCard, formattedPinyin);
+            } else if (currentMode === 'listening') {
+                renderListeningView(currentCard, formattedPinyin);
+            }
+        }
+
+        /* ================= MODE 1: FLASHCARD LOGIC ================= */
+        function renderFlashcardView(card, formattedPinyin) {
+            isCardFlipped = false;
+            const inner = document.getElementById('flashcard-inner');
+            inner.classList.remove('rotate-y-180');
+
+            document.getElementById('fc-counter').innerText = `${currentIndex + 1} / ${filteredDeck.length}`;
+            document.getElementById('fc-folder-label').innerText = `Folder: ${card.folder || 'General'}`;
+
+            // Front Card: Large English Definition, Hanzi below
+            document.getElementById('fc-tag-front').innerText = card.folder || 'General';
+            document.getElementById('fc-english-front').innerText = card.meaning;
+            document.getElementById('fc-hanzi-front').innerText = card.chinese;
+
+            // Back Card: Large Pinyin Target
+            document.getElementById('fc-tag-back').innerText = card.folder || 'General';
+            document.getElementById('fc-pinyin-back').innerText = formattedPinyin;
+            document.getElementById('fc-hanzi-back').innerText = card.chinese;
+            document.getElementById('fc-english-back').innerText = card.meaning;
+
+            const btns = document.getElementById('anki-buttons');
+            btns.classList.add('opacity-50', 'pointer-events-none');
+        }
+
+        function flipFlashcard() {
+            const inner = document.getElementById('flashcard-inner');
+            isCardFlipped = !isCardFlipped;
+            inner.classList.toggle('rotate-y-180');
+
+            const btns = document.getElementById('anki-buttons');
+            if (isCardFlipped) {
+                btns.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                btns.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
+
+        function handleAnkiResponse(intervalChoice) {
+            const currentCard = filteredDeck[currentIndex];
+            currentCard.interval = intervalChoice;
+            saveDeckToStorage();
+
+            currentIndex = (currentIndex + 1) % filteredDeck.length;
+            renderCurrentCard();
+        }
+
+        /* ================= MODE 2: QUIZ LOGIC ================= */
+        function renderQuizView(card, formattedPinyin) {
+            document.getElementById('quiz-counter').innerText = `${currentIndex + 1} / ${filteredDeck.length}`;
+            document.getElementById('quiz-question-word').innerText = card.chinese;
+            document.getElementById('quiz-question-meaning').innerText = `Select the correct Pinyin for: "${card.meaning}"`;
+
+            const distractors = deck.filter(c => c.id !== card.id);
+            shuffleArray(distractors);
+
+            const options = [card, ...distractors.slice(0, 3)];
+            shuffleArray(options);
+
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+
+            options.forEach(opt => {
+                const optPinyin = parsePinyin(opt.pinyinRaw);
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 font-bold transition flex items-center justify-between group";
+                btn.innerHTML = `
+                    <span class="text-slate-800 text-base group-hover:text-indigo-600">${optPinyin}</span>
+                    <i data-lucide="circle" class="w-5 h-5 text-slate-300 group-hover:text-indigo-500"></i>
+                `;
+                btn.onclick = () => handleQuizAnswer(opt.id === card.id, btn, card);
+                container.appendChild(btn);
+            });
+            lucide.createIcons();
+        }
+
+        function handleQuizAnswer(isCorrect, btnElement, card) {
+            if (isCorrect) {
+                btnElement.classList.remove('bg-slate-50', 'border-slate-200');
+                btnElement.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600');
+                
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % filteredDeck.length;
+                    renderCurrentCard();
+                }, 600);
+            } else {
+                btnElement.classList.remove('bg-slate-50', 'border-slate-200');
+                btnElement.classList.add('bg-rose-500', 'text-white', 'border-rose-600');
+                card.interval = 'again';
+                saveDeckToStorage();
+            }
+        }
+
+        /* ================= MODE 3: TYPING LOGIC ================= */
+        function renderTypingView(card, formattedPinyin) {
+            document.getElementById('typing-counter').innerText = `${currentIndex + 1} / ${filteredDeck.length}`;
+            document.getElementById('typing-category-badge').innerText = card.folder || 'General';
+            document.getElementById('typing-chinese').innerText = card.chinese;
+            document.getElementById('typing-meaning').innerText = card.meaning;
+
+            const input = document.getElementById('typing-input');
+            input.value = '';
+            input.disabled = false;
+            input.focus();
+
+            const feedback = document.getElementById('typing-feedback');
+            feedback.className = "hidden text-sm font-bold p-3 rounded-xl";
+            
+            document.getElementById('typing-submit-btn').classList.remove('hidden');
+            document.getElementById('typing-next-btn').classList.add('hidden');
+        }
+
+        function checkTypingAnswer(e) {
+            e.preventDefault();
+            const card = filteredDeck[currentIndex];
+            const formattedPinyin = parsePinyin(card.pinyinRaw);
+            const inputVal = document.getElementById('typing-input').value.trim();
+
+            const isRight = comparePinyin(inputVal, card.pinyinRaw, formattedPinyin);
+            const feedback = document.getElementById('typing-feedback');
+            feedback.classList.remove('hidden');
+
+            if (isRight) {
+                feedback.className = "text-sm font-bold p-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200";
+                feedback.innerHTML = `✓ Correct! (${formattedPinyin})`;
+            } else {
+                feedback.className = "text-sm font-bold p-3 rounded-xl bg-rose-50 text-rose-700 border border-rose-200";
+                feedback.innerHTML = `✗ Incorrect. Correct Pinyin: <strong>${formattedPinyin}</strong> (or <code class="bg-rose-100 px-1 rounded">${card.pinyinRaw}</code>)`;
+                card.interval = 'again';
+                saveDeckToStorage();
+            }
+
+            document.getElementById('typing-input').disabled = true;
+            document.getElementById('typing-submit-btn').classList.add('hidden');
+            document.getElementById('typing-next-btn').classList.remove('hidden');
+        }
+
+        function nextTypingCard() {
+            currentIndex = (currentIndex + 1) % filteredDeck.length;
+            renderCurrentCard();
+        }
+
+        /* ================= MODE 4: LISTENING LOGIC ================= */
+        function renderListeningView(card, formattedPinyin) {
+            document.getElementById('listening-counter').innerText = `${currentIndex + 1} / ${filteredDeck.length}`;
+            document.getElementById('listening-answer-reveal').classList.add('hidden');
+
+            playCurrentAudio();
+
+            const distractors = deck.filter(c => c.id !== card.id);
+            shuffleArray(distractors);
+
+            const options = [card, ...distractors.slice(0, 3)];
+            shuffleArray(options);
+
+            const container = document.getElementById('listening-options-container');
+            container.innerHTML = '';
+
+            options.forEach(opt => {
+                const optPinyin = parsePinyin(opt.pinyinRaw);
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-200 font-bold text-slate-800 transition";
+                btn.innerText = `${optPinyin} (${opt.meaning})`;
+                btn.onclick = () => handleListeningAnswer(opt.id === card.id, btn, card);
+                container.appendChild(btn);
+            });
+        }
+
+        function handleListeningAnswer(isCorrect, btnElement, card) {
+            const revealBox = document.getElementById('listening-answer-reveal');
+            document.getElementById('listening-revealed-chinese').innerText = card.chinese;
+            document.getElementById('listening-revealed-pinyin').innerText = parsePinyin(card.pinyinRaw);
+            revealBox.classList.remove('hidden');
+
+            if (isCorrect) {
+                btnElement.classList.remove('bg-slate-50', 'border-slate-200');
+                btnElement.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600');
+
+                setTimeout(() => {
+                    currentIndex = (currentIndex + 1) % filteredDeck.length;
+                    renderCurrentCard();
+                }, 1000);
+            } else {
+                btnElement.classList.remove('bg-slate-50', 'border-slate-200');
+                btnElement.classList.add('bg-rose-500', 'text-white', 'border-rose-600');
+                card.interval = 'again';
+                saveDeckToStorage();
+            }
+        }
+
+        /* ================= AUDIO TTS ENGINE ================= */
+        function playCurrentAudio() {
+            if (filteredDeck.length === 0) return;
+            const card = filteredDeck[currentIndex];
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(card.chinese);
+                utterance.lang = 'zh-CN';
+                utterance.rate = 0.85;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        /* ================= TSV/CSV IMPORT CONTROLLER ================= */
+        function openImportModal() {
+            populateImportFolderDropdown();
+            document.getElementById('import-modal').classList.remove('hidden');
+        }
+
+        function closeImportModal() {
+            document.getElementById('import-modal').classList.add('hidden');
+        }
+
+        function populateImportFolderDropdown() {
+            const select = document.getElementById('import-existing-folder');
+            const folders = Array.from(new Set(deck.map(c => c.folder || 'General')));
+            
+            let html = `<option value="NEW">+ Create New Folder...</option>`;
+            folders.forEach(f => {
+                html += `<option value="${f}">Add to Existing: "${f}"</option>`;
+            });
+            select.innerHTML = html;
+            toggleFolderMode();
+        }
+
+        function toggleFolderMode() {
+            const selectVal = document.getElementById('import-existing-folder').value;
+            const newContainer = document.getElementById('new-folder-input-container');
+            if (selectVal === 'NEW') {
+                newContainer.classList.remove('hidden');
+            } else {
+                newContainer.classList.add('hidden');
+            }
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Auto fill folder name if new folder selected
+            const selectVal = document.getElementById('import-existing-folder').value;
+            if (selectVal === 'NEW') {
+                const folderInput = document.getElementById('import-new-folder-name');
+                if (!folderInput.value) {
+                    folderInput.value = file.name.replace(/\.[^/.]+$/, "");
+                }
+            }
+
+            const reader = new FileReader();
+            reader.onload = function (evt) {
+                document.getElementById('import-textarea').value = evt.target.result;
+            };
+            reader.readAsText(file);
+        }
+
+        function processTextImport() {
+            const selectVal = document.getElementById('import-existing-folder').value;
+            let targetFolder = "";
+
+            if (selectVal === 'NEW') {
+                targetFolder = document.getElementById('import-new-folder-name').value.trim() || 'New Folder';
+            } else {
+                targetFolder = selectVal;
+            }
+
+            const text = document.getElementById('import-textarea').value.trim();
+            if (!text) return;
+
+            const lines = text.split(/\r?\n/);
+            const newCards = [];
+
+            lines.forEach((line, index) => {
+                if (!line.trim()) return;
+                const parts = line.includes('\t') ? line.split('\t') : line.split(',');
+
+                if (parts.length >= 3) {
+                    newCards.push({
+                        id: 'imported_' + Date.now() + '_' + index,
+                        chinese: parts[0].trim(),
+                        pinyinRaw: parts[1].trim(),
+                        meaning: parts[2].trim(),
+                        folder: targetFolder,
+                        interval: 'unseen'
+                    });
+                }
+            });
+
+            if (newCards.length > 0) {
+                deck = [...deck, ...newCards];
+                selectedFolder = targetFolder;
+                refreshDeckData();
+                closeImportModal();
+                document.getElementById('import-textarea').value = '';
+                document.getElementById('import-new-folder-name').value = '';
+            } else {
+                alert("Invalid format. Make sure data has 3 columns: Hanzi, Tone-Pinyin, English Meaning.");
+            }
+        }
+
+        /* ================= WORD TABLE & FOLDER CONTENT MANAGER ================= */
+        function openWordManagerModal() {
+            managerActiveFolder = selectedFolder === 'ALL' ? 'ALL' : selectedFolder;
+            renderManagerFolderList();
+            renderManagerWordTable();
+            document.getElementById('word-manager-modal').classList.remove('hidden');
+        }
+
+        function closeWordManagerModal() {
+            document.getElementById('word-manager-modal').classList.add('hidden');
+            editingCardId = null;
+            document.getElementById('manual-add-form').classList.add('hidden');
+            refreshDeckData();
+        }
+
+        function renderManagerFolderList() {
+            const container = document.getElementById('manager-folder-list');
+            const folders = Array.from(new Set(deck.map(c => c.folder || 'General')));
+
+            let html = `
+                <button onclick="setManagerFolder('ALL')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex justify-between items-center ${managerActiveFolder === 'ALL' ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'}">
+                    <span>All Words</span>
+                    <span class="opacity-80">${deck.length}</span>
+                </button>
+            `;
+
+            folders.forEach(f => {
+                const count = deck.filter(c => c.folder === f).length;
+                const active = managerActiveFolder === f;
+                html += `
+                    <button onclick="setManagerFolder('${f}')" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition flex justify-between items-center ${active ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-200'}">
+                        <span class="truncate">${f}</span>
+                        <span class="opacity-80">${count}</span>
+                    </button>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function setManagerFolder(folder) {
+            managerActiveFolder = folder;
+            editingCardId = null;
+            document.getElementById('manual-add-form').classList.add('hidden');
+            renderManagerFolderList();
+            renderManagerWordTable();
+        }
+
+        function renderManagerWordTable() {
+            const titleEl = document.getElementById('manager-current-folder-title');
+            const deleteFolderBtn = document.getElementById('delete-folder-btn');
+            
+            titleEl.innerText = managerActiveFolder === 'ALL' ? 'All Combined Words' : `Folder: ${managerActiveFolder}`;
+            
+            if (managerActiveFolder === 'ALL') {
+                deleteFolderBtn.classList.add('hidden');
+            } else {
+                deleteFolderBtn.classList.remove('hidden');
+            }
+
+            const words = managerActiveFolder === 'ALL' ? deck : deck.filter(c => c.folder === managerActiveFolder);
+            const tbody = document.getElementById('manager-words-tbody');
+
+            if (words.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-slate-400 text-xs font-bold">
+                            No words in this folder. Click 'Add New Word Row' to create one.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            words.forEach(card => {
+                const formattedPinyin = parsePinyin(card.pinyinRaw);
+                
+                if (editingCardId === card.id) {
+                    // Inline Edit Form Row
+                    html += `
+                        <tr class="bg-amber-50/60">
+                            <td class="py-2.5 px-4">
+                                <input type="text" id="edit-hanzi-${card.id}" value="${card.chinese}" class="w-full bg-white border border-amber-300 rounded-lg px-2 py-1 text-xs font-bold text-slate-800">
+                            </td>
+                            <td class="py-2.5 px-4">
+                                <input type="text" id="edit-pinyin-${card.id}" value="${card.pinyinRaw}" class="w-full bg-white border border-amber-300 rounded-lg px-2 py-1 text-xs font-bold text-slate-800">
+                            </td>
+                            <td class="py-2.5 px-4">
+                                <input type="text" id="edit-meaning-${card.id}" value="${card.meaning}" class="w-full bg-white border border-amber-300 rounded-lg px-2 py-1 text-xs font-bold text-slate-800">
+                            </td>
+                            <td class="py-2.5 px-4 text-right space-x-1">
+                                <button onclick="saveInlineEdit('${card.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg text-xs transition">Save</button>
+                                <button onclick="cancelInlineEdit()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-2.5 py-1 rounded-lg text-xs transition">Cancel</button>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    // Normal Table Row
+                    html += `
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="py-3 px-4 font-extrabold text-slate-900 text-base">${card.chinese}</td>
+                            <td class="py-3 px-4 font-bold text-indigo-600">
+                                <div>${formattedPinyin}</div>
+                                <div class="text-[10px] font-mono text-slate-400 font-normal">Tone: ${card.pinyinRaw}</div>
+                            </td>
+                            <td class="py-3 px-4 font-semibold text-slate-700">${card.meaning}</td>
+                            <td class="py-3 px-4 text-right space-x-1">
+                                <button onclick="startInlineEdit('${card.id}')" class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition" title="Edit Row">
+                                    <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="deleteSingleWord('${card.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition" title="Delete Row">
+                                    <i data-lucide="trash" class="w-4 h-4"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }
+            });
+
+            tbody.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function toggleAddWordForm() {
+            const form = document.getElementById('manual-add-form');
+            form.classList.toggle('hidden');
+        }
+
+        function handleManualAddWord(e) {
+            e.preventDefault();
+            const hanzi = document.getElementById('add-hanzi').value.trim();
+            const pinyin = document.getElementById('add-pinyin').value.trim();
+            const meaning = document.getElementById('add-meaning').value.trim();
+
+            if (!hanzi || !pinyin || !meaning) return;
+
+            const folderName = managerActiveFolder === 'ALL' ? 'General' : managerActiveFolder;
+
+            const newCard = {
+                id: 'card_' + Date.now(),
+                chinese: hanzi,
+                pinyinRaw: pinyin,
+                meaning: meaning,
+                folder: folderName,
+                interval: 'unseen'
+            };
+
+            deck.push(newCard);
+            saveDeckToStorage();
+
+            document.getElementById('add-hanzi').value = '';
+            document.getElementById('add-pinyin').value = '';
+            document.getElementById('add-meaning').value = '';
+            toggleAddWordForm();
+
+            renderManagerFolderList();
+            renderManagerWordTable();
+        }
+
+        function startInlineEdit(cardId) {
+            editingCardId = cardId;
+            renderManagerWordTable();
+        }
+
+        function cancelInlineEdit() {
+            editingCardId = null;
+            renderManagerWordTable();
+        }
+
+        function saveInlineEdit(cardId) {
+            const card = deck.find(c => c.id === cardId);
+            if (!card) return;
+
+            const hanzi = document.getElementById(`edit-hanzi-${cardId}`).value.trim();
+            const pinyin = document.getElementById(`edit-pinyin-${cardId}`).value.trim();
+            const meaning = document.getElementById(`edit-meaning-${cardId}`).value.trim();
+
+            if (hanzi && pinyin && meaning) {
+                card.chinese = hanzi;
+                card.pinyinRaw = pinyin;
+                card.meaning = meaning;
+                saveDeckToStorage();
+            }
+
+            editingCardId = null;
+            renderManagerWordTable();
+        }
+
+        function deleteSingleWord(cardId) {
+            if (confirm("Are you sure you want to delete this word row?")) {
+                deck = deck.filter(c => c.id !== cardId);
+                saveDeckToStorage();
+                renderManagerFolderList();
+                renderManagerWordTable();
+            }
+        }
+
+        function deleteSelectedFolder() {
+            if (managerActiveFolder === 'ALL') return;
+            if (confirm(`Are you sure you want to delete the entire folder "${managerActiveFolder}" and all its words?`)) {
+                deck = deck.filter(c => c.folder !== managerActiveFolder);
+                managerActiveFolder = 'ALL';
+                saveDeckToStorage();
+                renderManagerFolderList();
+                renderManagerWordTable();
+            }
+        }
+
+        function resetAllProgress() {
+            deck.forEach(c => c.interval = 'unseen');
+            saveDeckToStorage();
+            applyFilterAndResetIndex();
+            alert("All SRS intervals have been reset.");
+        }
+
+        /* ================= HELPER UTILS ================= */
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+    </script>
+</body>
+</html>
